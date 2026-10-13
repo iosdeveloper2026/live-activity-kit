@@ -1,0 +1,61 @@
+{
+  "brandName": "GiftBox",
+  "title": "",
+  "subtitle": "",
+  "imageUrl": "",
+  "imageStyle": "large",
+  "bannerImageUrl": "",
+  "symbol": "giftcard.fill",
+  "accentColor": "#B0283A",
+  "recipientName": "Emma",
+  "showStages": false,
+  "titlePosition": "below",
+  "showTimer": true,
+  "timerMinutes": 30,
+  "cron": {
+    "startEnabled": true,
+    "dismissAfterSeconds": 900
+  },
+  "rotation": "random",
+  "contents": [
+    {
+      "title": "Birthday gift card",
+      "subtitle": "Send it in seconds",
+      "imageUrl": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=240&h=240&fit=crop",
+      "bannerImageUrl": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=1100&h=360&fit=crop",
+      "titlePosition": "below",
+      "showTimer": true,
+      "timerMinutes": 30,
+      "accentColor": "#D4A017"
+    },
+    {
+      "title": "",
+      "subtitle": "",
+      "imageUrl": "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?w=240&h=240&fit=crop",
+      "bannerImageUrl": "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?w=1100&h=360&fit=crop",
+      "titlePosition": "below",
+      "showTimer": true,
+      "timerMinutes": 15,
+      "accentColor": "#E0457B"
+    },
+    {
+      "title": "Festive special",
+      "subtitle": "20% extra value today",
+      "imageUrl": "https://images.unsplash.com/photo-1545785028-23ee5937cf69?w=240&h=240&fit=crop",
+      "bannerImageUrl": "https://images.unsplash.com/photo-1545785028-23ee5937cf69?w=1100&h=360&fit=crop",
+      "titlePosition": "overlay",
+      "showTimer": true,
+      "timerMinutes": 60,
+      "accentColor": "#B0283A"
+    },
+    {
+      "title": "Thank-you card",
+      "subtitle": "Say it with a gift",
+      "imageUrl": "https://images.unsplash.com/photo-1707944145479-12755f0434d8?w=240&h=240&fit=crop&crop=entropy",
+      "bannerImageUrl": "https://images.unsplash.com/photo-1707944145479-12755f0434d8?w=1100&h=360&fit=crop&crop=entropy",
+      "titlePosition": "below",
+      "showTimer": false,
+      "accentColor": "#5E8C61"
+    }
+  ]
+}

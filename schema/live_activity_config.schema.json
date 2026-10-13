@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/iosdeveloper2026/live-activity-kit/schema/live_activity_config.schema.json",
+  "title": "live_activity_config",
+  "description": "Firebase Remote Config parameter (type JSON) read by LiveActivityKit and the Live Activity cron. Every field is optional.",
+  "type": "object",
+  "properties": {
+    "brandName": {
+      "type": "string",
+      "description": "Small tag on the image (large style) or label above the title. Empty hides it."
+    },
+    "title": {
+      "type": "string",
+      "description": "Main line. Supports {name} and {order}. Empty hides it."
+    },
+    "subtitle": {
+      "type": "string",
+      "description": "Second line. Title and subtitle both empty: the image fills the card."
+    },
+    "imageUrl": {
+      "type": "string",
+      "pattern": "^(https://.+)?$",
+      "description": "Square image for the small style and the Dynamic Island."
+    },
+    "bannerImageUrl": {
+      "type": "string",
+      "pattern": "^(https://.+)?$",
+      "description": "Wide image (about 3:1, e.g. 1100x360) for the large style. Falls back to imageUrl."
+    },
+    "imageStyle": {
+      "enum": [
+        "large",
+        "small"
+      ]
+    },
+    "symbol": {
+      "type": "string",
+      "description": "SF Symbol shown when no image is available."
+    },
+    "accentColor": {
+      "type": "string",
+      "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$",
+      "description": "Clock icon, labels and progress colour."
+    },
+    "showStages": {
+      "type": "boolean",
+      "description": "false: image card only. true: stage, status, progress and stage countdown."
+    },
+    "titlePosition": {
+      "enum": [
+        "below",
+        "overlay"
+      ],
+      "description": "Large style without stages: text under the image, or over it."
+    },
+    "showTimer": {
+      "type": "boolean",
+      "description": "Countdown pill with clock icon on the image card."
+    },
+    "timerMinutes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 480,
+      "description": "Countdown length from when the card starts. Live Activities last at most 8 hours."
+    },
+    "recipientName": {
+      "type": "string",
+      "description": "Fills {name}."
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "title",
+          "status",
+          "etaMinutes"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "etaMinutes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "symbol": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "contents": {
+      "type": "array",
+      "description": "Rotating cards. Each overrides only the fields it sets.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "brandName": {
+            "type": "string",
+            "description": "Small tag on the image (large style) or label above the title. Empty hides it."
+          },
+          "title": {
+            "type": "string",
+            "description": "Main line. Supports {name} and {order}. Empty hides it."
+          },
+          "subtitle": {
+            "type": "string",
+            "description": "Second line. Title and subtitle both empty: the image fills the card."
+          },
+          "imageUrl": {
+            "type": "string",
+            "pattern": "^(https://.+)?$",
+            "description": "Square image for the small style and the Dynamic Island."
+          },
+          "bannerImageUrl": {
+            "type": "string",
+            "pattern": "^(https://.+)?$",
+            "description": "Wide image (about 3:1, e.g. 1100x360) for the large style. Falls back to imageUrl."
+          },
+          "imageStyle": {
+            "enum": [
+              "large",
+              "small"
+            ]
+          },
+          "symbol": {
+            "type": "string",
+            "description": "SF Symbol shown when no image is available."
+          },
+          "accentColor": {
+            "type": "string",
+            "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$",
+            "description": "Clock icon, labels and progress colour."
+          },
+          "showStages": {
+            "type": "boolean",
+            "description": "false: image card only. true: stage, status, progress and stage countdown."
+          },
+          "titlePosition": {
+            "enum": [
+              "below",
+              "overlay"
+            ],
+            "description": "Large style without stages: text under the image, or over it."
+          },
+          "showTimer": {
+            "type": "boolean",
+            "description": "Countdown pill with clock icon on the image card."
+          },
+          "timerMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 480,
+            "description": "Countdown length from when the card starts. Live Activities last at most 8 hours."
+          }
+        }
+      }
+    },
+    "rotation": {
+      "enum": [
+        "sequential",
+        "random"
+      ],
+      "description": "Which card each new Live Activity takes."
+    },
+    "cron": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "startEnabled": {
+          "type": "boolean",
+          "description": "Off switch: false stops new Live Activities."
+        },
+        "dismissAfterSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How long a finished card stays on screen."
+        }
+      }
+    },
+    "startOnAppClose": {
+      "type": "boolean",
+      "description": "Demo app only; ignored by LiveActivityKit."
+    },
+    "autoAdvanceSeconds": {
+      "type": "integer",
+      "description": "Demo app only; ignored by LiveActivityKit."
+    }
+  },
+  "additionalProperties": false
+}

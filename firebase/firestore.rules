@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // One document per app install, written by the iOS app.
+    // Nobody can read it from the app; the GitHub cron reads it with the Admin SDK (bypasses rules).
+    match /liveActivityDevices/{installId} {
+      allow read: if false;
+      allow create, update: if request.resource.data.keys().hasOnly(
+          ['fcmToken', 'startToken', 'activity', 'platform', 'appVersion', 'updatedAt', 'bundleId'])
+        && request.resource.data.fcmToken is string
+        && request.resource.data.fcmToken.size() < 400;
+      allow delete: if true;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
