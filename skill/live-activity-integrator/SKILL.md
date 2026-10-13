@@ -27,8 +27,22 @@ The kit is this skill's repo: `../../` relative to this file (Swift package at t
   user asks.
 - **Confirm before publishing.** Remote Config changes are published only after the user approved
   previews of every card.
-- **Re-runnable.** Every script skips what's already done. If an integration is half finished,
-  run Stage 1 and continue from the first stage whose check fails.
+- **Re-runnable.** Every script skips what's already done. For an app that may be partly done, start with
+  `python3 scripts/status.py --app <folder> [--project <id> --account <email>] [--repo <owner/repo>]`
+  and continue at the stage it names.
+
+## App types
+
+| App | What changes |
+|---|---|
+| SwiftUI | `insert_start_line.py` adds an `init()` to the `@main App` (or extends the existing one) |
+| UIKit | Line goes in `application(_:didFinishLaunchingWithOptions:)`, after the app's `FirebaseApp.configure()` |
+| Compose Multiplatform | Launch file is the Swift `iOSApp.swift`; Kotlin is untouched. `add_kit.rb` adds `CADisableMinimumFrameDurationOnPhone` |
+| Already uses Firebase (SPM) | Checked: must allow 12.19.2–<13. The app's own push handlers keep working (verified: its `didRegister…` and `MessagingDelegate` still run) |
+| Firebase via CocoaPods | `add_kit.rb` stops: mixing Pods and SPM Firebase breaks the build. Ask the user to move Firebase to SPM first |
+| Has a widget extension | The kit joins it: `LiveActivityKitWidget()` goes into its `WidgetBundle`, or a single `@main Widget` is wrapped in a new bundle. Several extensions: pass `--widget-target <name>`; `--new-widget` forces a separate one |
+| Has its own Live Activity | Both coexist. The kit labels its device records `attributesType: LiveActivityAttributes` and the cron skips records of other types |
+| Xcode 16+ synchronized folders | New Info.plist files are written next to the project (inside a synced folder they'd clash with the generated one) |
 
 ## Stage 1 · Inspect
 

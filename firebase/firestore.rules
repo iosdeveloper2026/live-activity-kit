@@ -6,7 +6,7 @@ service cloud.firestore {
     match /liveActivityDevices/{installId} {
       allow read: if false;
       allow create, update: if request.resource.data.keys().hasOnly(
-          ['fcmToken', 'startToken', 'activity', 'platform', 'appVersion', 'updatedAt', 'bundleId'])
+          ['fcmToken', 'startToken', 'activity', 'platform', 'appVersion', 'updatedAt', 'bundleId', 'attributesType'])
         && request.resource.data.fcmToken is string
         && request.resource.data.fcmToken.size() < 400;
       allow delete: if true;

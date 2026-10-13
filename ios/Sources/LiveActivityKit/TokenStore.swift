@@ -80,6 +80,8 @@ final class TokenStore {
             "platform": ["stringValue": "IOS"],
             // Lets one Firebase project serve several apps: each app's cron only sends to its own devices.
             "bundleId": ["stringValue": Bundle.main.bundleIdentifier ?? ""],
+            // Lets the cron skip records of another Live Activity type in the same app.
+            "attributesType": ["stringValue": "LiveActivityAttributes"],
             "appVersion": ["stringValue": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""],
             "updatedAt": ["timestampValue": ISO8601DateFormatter().string(from: .now)],
         ]

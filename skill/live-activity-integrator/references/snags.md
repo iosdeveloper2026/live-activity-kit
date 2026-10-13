@@ -22,3 +22,7 @@
 | iPhone "unavailable" | Locked, Wi-Fi only, or not trusted | Cable, unlock, Trust, keep unlocked |
 | Card vanishes 10–40 s after starting | User dismissed it | Explain; the next repeat starts a new one |
 | iOS 18 API fails to build | Deployment target is iOS 17 | Build against the minimum iOS version |
+| "Multiple commands produce …/Info.plist" | A new Info.plist inside an Xcode 16 synchronized folder | `add_kit.rb` writes it next to the project; move it there if added by hand |
+| Preview card didn't start on the very first launch | First-launch timing (seen once with a Compose app) | Relaunch with `-LiveActivityPreview n`; it works on the next launch |
+| Cron sends the wrong Live Activity type | App has its own Live Activity and the kit in one Firebase project | Kit 1.1.0+ labels records; cron skips other types |
+| Build fails: duplicate Firebase symbols | App gets Firebase from CocoaPods | Move Firebase to SPM 12.19.2+ before adding the kit |

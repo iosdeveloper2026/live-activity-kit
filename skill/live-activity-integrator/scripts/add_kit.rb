@@ -2,7 +2,12 @@
 # Stage 2: add LiveActivityKit to an app's Xcode project. Safe to run again (skips what's done).
 #
 #   ruby add_kit.rb --project App.xcodeproj [--kit <Git URL | local kit folder>] [--app-group group.x]
-#                   [--widget LiveActivityWidget] [--version 1.0.0] [--resource App/GoogleService-Info.plist] [--dry-run]
+#                   [--widget LiveActivityWidget | --widget-target <existing extension>] [--new-widget]
+#                   [--version 1.0.0] [--resource App/GoogleService-Info.plist] [--dry-run]
+#
+# Widget: if the app already has a WidgetKit extension, the kit joins it (adds LiveActivityKitWidget()
+# to its WidgetBundle, or wraps a single @main Widget in a new bundle). --new-widget forces a
+# separate extension instead.
 #
 # Adds: the kit package (local path or Git URL), LiveActivityKit to the app target, a widget
 # extension target with one file using LiveActivityKitWidget, the embed step, App Group + push
@@ -18,7 +23,9 @@ OptionParser.new do |o|
   o.on("--project PATH") { |v| opts[:project] = v }
   o.on("--kit PATH_OR_URL") { |v| opts[:kit] = v }
   o.on("--app-group ID") { |v| opts[:group] = v }
-  o.on("--widget NAME") { |v| opts[:widget] = v }
+  o.on("--widget NAME", "name for a new widget extension") { |v| opts[:widget] = v }
+  o.on("--widget-target NAME", "existing extension to add the Live Activity to") { |v| opts[:widget_target] = v }
+  o.on("--new-widget", "always create a separate widget extension") { opts[:new_widget] = true }
   o.on("--version VERSION", "minimum version for a Git URL") { |v| opts[:version] = v }
   o.on("--resource FILE", "add a file (e.g. GoogleService-Info.plist) to the app's resources") { |v| opts[:resources] << v }
   o.on("--dry-run") { opts[:dry] = true }
@@ -38,6 +45,39 @@ deployment = [cfg.(app, "IPHONEOS_DEPLOYMENT_TARGET") || "17.0", "17.0"].max_by 
 team = cfg.(app, "DEVELOPMENT_TEAM")
 changes = []
 step = ->(text) { changes << text; puts((opts[:dry] ? "[plan] " : "[done] ") + text) }
+
+# ---- 0. Compatibility checks (before changing anything) --------------------------------------
+KIT_FIREBASE = [Gem::Version.new("12.19.2"), Gem::Version.new("13.0.0")] # the kit's Firebase range
+podfile = File.join(root, "Podfile")
+if File.exist?(podfile) && File.read(podfile) =~ /pod\s+['"]Firebase/
+  abort "STOP: this app gets Firebase from CocoaPods. The kit brings Firebase through Swift Package Manager, " \
+        "and having both causes duplicate-symbol errors. Move the app's Firebase to SPM (12.19.2+) first, or ask the user."
+end
+project.root_object.package_references.each do |r|
+  next unless r.respond_to?(:repositoryURL) && r.repositoryURL.to_s.include?("firebase-ios-sdk")
+  req = r.requirement || {}
+  low = Gem::Version.new(req["minimumVersion"] || req["version"] || "0")
+  high = case req["kind"]
+         when "exactVersion" then Gem::Version.new(req["version"]) .bump rescue low
+         when "upToNextMinorVersion" then Gem::Version.new("#{low.segments[0]}.#{low.segments[1].to_i + 1}.0")
+         when "versionRange" then Gem::Version.new(req["maximumVersion"])
+         else Gem::Version.new("#{low.segments[0] + 1}.0.0")
+         end
+  if high <= KIT_FIREBASE[0] || low >= KIT_FIREBASE[1]
+    abort "STOP: the app pins firebase-ios-sdk #{req.inspect}. The kit needs 12.19.2 up to (not including) 13.0.0. " \
+          "Update the app's Firebase package to 12.19.2 or later first (ask the user)."
+  end
+  puts "[check] App already uses firebase-ios-sdk #{req["minimumVersion"] || req["version"]}: compatible with the kit."
+end
+compose = File.read(File.join(project_path, "project.pbxproj")).include?("embedAndSignAppleFrameworkForXcode")
+
+# In projects with synchronized folders, Xcode copies every file in the folder into the bundle, so a
+# new Info.plist there clashes with the generated one ("Multiple commands produce .../Info.plist").
+# Put new Info.plist files next to the project instead.
+synced_dirs = project.objects.select { |o| o.isa == "PBXFileSystemSynchronizedRootGroup" }.map { |g| g.path.to_s }
+plist_path = lambda do |preferred, flat_name|
+  synced_dirs.any? { |d| preferred.start_with?(d + "/") } ? flat_name : preferred
+end
 
 # ---- 1. Package reference -------------------------------------------------------------------
 local = !opts[:kit].start_with?("http", "git@")
@@ -72,7 +112,83 @@ end
 add_product.(app, "LiveActivityKit")
 
 # ---- 2. Widget extension target -------------------------------------------------------------
-widget = project.native_targets.find { |t| t.name == widget_name }
+# Swift files belonging to a target: classic file references, or a synchronized folder.
+target_swift_files = lambda do |t|
+  files = t.source_build_phase.files_references.compact.map { |r| r.real_path.to_s }.select { |f| f.end_with?(".swift") }
+  if t.respond_to?(:file_system_synchronized_groups)
+    (t.file_system_synchronized_groups || []).each { |g| files += Dir.glob(File.join(root, g.path.to_s, "**/*.swift")) }
+  end
+  files += Dir.glob(File.join(root, t.name, "**/*.swift")) if files.empty?
+  files.uniq.select { |f| File.exist?(f) }
+end
+main_widget_file = lambda do |t|
+  target_swift_files.(t).find { |f| File.read(f, encoding: "UTF-8") =~ /@main\s*(\n\s*)?struct\s+\w+\s*:\s*(WidgetBundle|Widget)\b/ }
+end
+
+existing = nil
+unless opts[:new_widget] || project.native_targets.any? { |t| t.name == widget_name }
+  candidates = project.native_targets.select { |t| t.product_type == "com.apple.product-type.app-extension" && main_widget_file.(t) }
+  existing = opts[:widget_target] ? candidates.find { |t| t.name == opts[:widget_target] } : (candidates.size == 1 ? candidates.first : nil)
+  abort "Widget extension #{opts[:widget_target]} not found or has no @main widget" if opts[:widget_target] && !existing
+  if existing.nil? && candidates.size > 1
+    abort "Several widget extensions (#{candidates.map(&:name).join(", ")}). Rerun with --widget-target <name> or --new-widget."
+  end
+end
+
+if existing
+  widget = existing
+  widget_name = existing.name
+  file = main_widget_file.(existing)
+  source = File.read(file, encoding: "UTF-8")
+  if source.include?("LiveActivityKitWidget()")
+    # already added
+  elsif source =~ /@main\s*(\n\s*)?struct\s+(\w+)\s*:\s*WidgetBundle\b/
+    body = source.match(/var\s+body\s*:\s*some\s+Widget\s*\{[^\n]*\n/) or abort "Couldn't find `var body: some Widget {` in #{file}"
+    indent = source[body.end(0)..][/\A[ \t]*/]
+    updated = source[0...body.end(0)] + "#{indent}LiveActivityKitWidget()\n" + source[body.end(0)..]
+    updated = updated.sub(/^(import [^\n]+\n)(?!.*^import [^\n]+\n)/m) { "#{$1}import LiveActivityKitWidget\n" } unless updated =~ /^import LiveActivityKitWidget/
+    File.write(file, updated) unless opts[:dry]
+    step.("Add LiveActivityKitWidget() to the existing WidgetBundle in #{file.sub(root + "/", "")}")
+  else
+    # A single @main Widget: move @main to a new bundle that holds both widgets.
+    name = source[/@main\s*(?:\n\s*)?struct\s+(\w+)\s*:\s*Widget\b/, 1]
+    unless opts[:dry]
+      File.write(file, source.sub(/@main\s*(\n\s*)?(struct\s+#{name}\s*:\s*Widget\b)/, '\2'))
+      bundle_file = File.join(File.dirname(file), "LiveActivityBundle.swift")
+      File.write(bundle_file, <<~SWIFT)
+        import LiveActivityKitWidget
+        import SwiftUI
+        import WidgetKit
+
+        /// Added by LiveActivityKit: the app's widget plus the remote Live Activity.
+        @main
+        struct LiveActivityBundle: WidgetBundle {
+            var body: some Widget {
+                #{name}()
+                LiveActivityKitWidget()
+            }
+        }
+      SWIFT
+      unless target_swift_files.(existing).include?(bundle_file) && existing.source_build_phase.files_references.empty?
+        group = project.main_group.recursive_children.find { |g| g.is_a?(Xcodeproj::Project::Object::PBXGroup) && g.real_path.to_s == File.dirname(file) }
+        existing.add_file_references([group.new_reference(bundle_file)]) if group
+      end
+    end
+    step.("Move @main from #{name} to a new LiveActivityBundle (#{name}() + LiveActivityKitWidget())")
+  end
+  widget_ent = (existing.build_configurations.map { |c| c.build_settings["CODE_SIGN_ENTITLEMENTS"] }.compact.first)
+  widget_info = (existing.build_configurations.map { |c| c.build_settings["INFOPLIST_FILE"] }.compact.first)
+  unless widget_ent
+    widget_ent = "#{widget_name}/#{widget_name}.entitlements"
+    existing.build_configurations.each { |c| c.build_settings["CODE_SIGN_ENTITLEMENTS"] = widget_ent }
+  end
+  unless widget_info
+    widget_info = plist_path.("#{widget_name}/LiveActivity-Info.plist", "#{widget_name}-LiveActivity-Info.plist")
+    existing.build_configurations.each { |c| c.build_settings["INFOPLIST_FILE"] = widget_info }
+  end
+end
+
+widget ||= project.native_targets.find { |t| t.name == widget_name }
 widget_dir = File.join(root, widget_name)
 unless widget
   widget = project.new_target(:app_extension, widget_name, :ios, deployment, nil, :swift)
@@ -115,6 +231,7 @@ add_product.(widget, "LiveActivityKitWidget")
 
 # ---- 3. Entitlements -------------------------------------------------------------------------
 edit_plist = lambda do |path, description, &change|
+  path = path.sub(%r{\A\$\((SRCROOT|PROJECT_DIR)\)/}, "")
   full = File.join(root, path)
   data = File.exist?(full) ? Xcodeproj::Plist.read_from_path(full) : {}
   before = Marshal.load(Marshal.dump(data))
@@ -137,21 +254,22 @@ edit_plist.(app_ent, "App entitlements (App Group #{group_id}, push)") do |d|
   add_group.(d)
   d["aps-environment"] ||= "development"
 end
-edit_plist.("#{widget_name}/#{widget_name}.entitlements", "Widget entitlements (App Group #{group_id})") { |d| add_group.(d) }
+edit_plist.(widget_ent || "#{widget_name}/#{widget_name}.entitlements", "Widget entitlements (App Group #{group_id})") { |d| add_group.(d) }
 
 # ---- 4. Info.plist ---------------------------------------------------------------------------
 app_info = cfg.(app, "INFOPLIST_FILE")
 unless app_info
   # Generated Info.plist: add a small file with the extra keys; Xcode merges both.
-  app_info = "#{app.name}/LiveActivity-Info.plist"
+  app_info = plist_path.("#{app.name}/LiveActivity-Info.plist", "#{app.name}-LiveActivity-Info.plist")
   app.build_configurations.each { |c| c.build_settings["INFOPLIST_FILE"] = app_info }
 end
 edit_plist.(app_info, "App Info.plist (NSSupportsLiveActivities, LiveActivityAppGroup, remote-notification)") do |d|
   d["NSSupportsLiveActivities"] = true
+  d["CADisableMinimumFrameDurationOnPhone"] = true if compose # Compose crashes at launch without it
   d["LiveActivityAppGroup"] = group_id
   d["UIBackgroundModes"] = ((d["UIBackgroundModes"] || []) + ["remote-notification"]).uniq
 end
-edit_plist.("#{widget_name}/Info.plist", "Widget Info.plist") do |d|
+edit_plist.(widget_info || "#{widget_name}/Info.plist", "Widget Info.plist") do |d|
   d["NSExtension"] ||= { "NSExtensionPointIdentifier" => "com.apple.widgetkit-extension" }
   d["LiveActivityAppGroup"] = group_id
 end
@@ -173,7 +291,9 @@ end
 # Deployment target: the kit needs iOS 17 (remote start itself needs 17.2 at runtime).
 [app, widget].each do |t|
   t.build_configurations.each do |c|
-    current = c.build_settings["IPHONEOS_DEPLOYMENT_TARGET"]
+    # A target without its own value inherits the project's setting for the same configuration.
+    current = c.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] ||
+              project.build_configurations.find { |pc| pc.name == c.name }&.build_settings&.[]("IPHONEOS_DEPLOYMENT_TARGET")
     next if current && Gem::Version.new(current) >= Gem::Version.new("17.0")
     c.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "17.0"
     step.("Raise #{t.name} (#{c.name}) deployment target to iOS 17.0")
