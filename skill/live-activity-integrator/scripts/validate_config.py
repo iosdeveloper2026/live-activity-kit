@@ -3,7 +3,7 @@
 
     python3 validate_config.py <config.json> [--repeat-minutes N] [--skip-images]
 
-1. Schema: runs ajv against schema/live_activity_config.schema.json (needs Node/npx).
+1. Schema: runs ajv against assets/live_activity_config.schema.json (needs Node/npx).
 2. Every card, fully resolved (top-level defaults + the card's own fields):
    - images load over HTTPS and are real images under 1 MB,
    - banner images for the large style are wide enough (>= 2.4:1, ideally ~3:1),
@@ -20,7 +20,7 @@ import tempfile
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCHEMA = os.path.normpath(os.path.join(HERE, "..", "..", "..", "schema", "live_activity_config.schema.json"))
+SCHEMA = os.path.normpath(os.path.join(HERE, "..", "assets", "live_activity_config.schema.json"))
 CARD_FIELDS = ["brandName", "title", "subtitle", "imageUrl", "bannerImageUrl", "imageStyle", "symbol",
                "accentColor", "showStages", "titlePosition", "showTimer", "timerMinutes"]
 DEFAULTS = {"imageStyle": "small", "titlePosition": "below", "showStages": True, "showTimer": False,

@@ -1,6 +1,6 @@
 # live_activity_config fields
 
-Schema: `schema/live_activity_config.schema.json`. Example: `examples/live_activity_config.json`.
+Schema: `assets/live_activity_config.schema.json`. Example: `assets/live_activity_config.example.json`.
 Every field is optional. Cards in `contents` override only the fields they set.
 
 | Field | Values | Effect |

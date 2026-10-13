@@ -9,9 +9,10 @@ You add the LiveActivityKit system to the iOS app in the current folder (or the 
 names), following seven stages. **Show every step as you go**: say which stage you're in, print each
 command before running it, and end each stage with its check and the result.
 
-The kit is this skill's repo: `../../` relative to this file (Swift package at the root, `schema/`,
-`examples/`, `firebase/`, `INSTALL.md`), published at https://github.com/iosdeveloper2026/live-activity-kit. Apps add the package by that Git URL
-(version 1.0.0 or later). Scripts are in `scripts/`, detailed references in `references/`.
+The Swift package is published at https://github.com/iosdeveloper2026/live-activity-kit; apps add it by
+that Git URL (version 1.1.0 or later). This skill is self-contained: scripts in `scripts/`, references in
+`references/`, and in `assets/` the config schema, an example config and the Firestore rules. It works
+from a claude.ai account upload or from a clone of the kit repo.
 
 ## Rules
 
@@ -99,7 +100,7 @@ scripts/firebase_app.sh --account <email> --project <id> --bundle-id <bundle> --
   the screenshots. Publish only after the user approves:
   `python3 scripts/publish_config.py --account <email> --project <id> --config live_activity_config.json` (dry),
   then again with `--yes`.
-- Firestore: if not set up, deploy `firebase/firestore.rules` (ask before enabling Firestore in a project).
+- Firestore: if not set up, deploy `assets/firestore.rules` (ask before enabling Firestore in a project).
 - **User step:** upload the APNs key (.p8) to Firebase Cloud Messaging, both rows (`references/user-steps.md`).
 
 **Check:** `python3 scripts/check_tokens.py --account <email> --project <id> --bundle-id <bundle>`
