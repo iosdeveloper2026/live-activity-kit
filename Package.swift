@@ -14,7 +14,7 @@ let package = Package(
         .package(url: "https://github.com/firebase/firebase-ios-sdk", "12.19.2"..<"13.0.0"),
     ],
     targets: [
-        .target(name: "LiveActivityKitShared"),
+        .target(name: "LiveActivityKitShared", path: "ios/Sources/LiveActivityKitShared"),
         .target(
             name: "LiveActivityKit",
             dependencies: [
@@ -22,8 +22,9 @@ let package = Package(
                 .product(name: "FirebaseCore", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseMessaging", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseRemoteConfig", package: "firebase-ios-sdk"),
-            ]
+            ],
+            path: "ios/Sources/LiveActivityKit"
         ),
-        .target(name: "LiveActivityKitWidget", dependencies: ["LiveActivityKitShared"]),
+        .target(name: "LiveActivityKitWidget", dependencies: ["LiveActivityKitShared"], path: "ios/Sources/LiveActivityKitWidget"),
     ]
 )

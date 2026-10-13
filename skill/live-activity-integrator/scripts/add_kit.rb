@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # Stage 2: add LiveActivityKit to an app's Xcode project. Safe to run again (skips what's done).
 #
-#   ruby add_kit.rb --project App.xcodeproj --kit <path-to-kit/ios | git URL> [--app-group group.x]
+#   ruby add_kit.rb --project App.xcodeproj [--kit <Git URL | local kit folder>] [--app-group group.x]
 #                   [--widget LiveActivityWidget] [--version 1.0.0] [--resource App/GoogleService-Info.plist] [--dry-run]
 #
 # Adds: the kit package (local path or Git URL), LiveActivityKit to the app target, a widget
@@ -13,7 +13,7 @@ require "xcodeproj"
 
 Encoding.default_external = Encoding::UTF_8
 
-opts = { widget: "LiveActivityWidget", dry: false, version: "1.0.0", resources: [] }
+opts = { widget: "LiveActivityWidget", dry: false, version: "1.0.0", resources: [], kit: "https://github.com/iosdeveloper2026/live-activity-kit" }
 OptionParser.new do |o|
   o.on("--project PATH") { |v| opts[:project] = v }
   o.on("--kit PATH_OR_URL") { |v| opts[:kit] = v }
@@ -23,7 +23,7 @@ OptionParser.new do |o|
   o.on("--resource FILE", "add a file (e.g. GoogleService-Info.plist) to the app's resources") { |v| opts[:resources] << v }
   o.on("--dry-run") { opts[:dry] = true }
 end.parse!
-abort "--project and --kit are required" unless opts[:project] && opts[:kit]
+abort "--project is required" unless opts[:project]
 
 project_path = File.expand_path(opts[:project])
 root = File.dirname(project_path)

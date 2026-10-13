@@ -7,7 +7,7 @@ Placeholders: `<bundle-id>` is the app's bundle ID, e.g. `com.example.shop`.
 
 ## 1. Add the package
 
-Xcode → File → Add Package Dependencies → this repo's `ios` folder (or its Git URL).
+Xcode → File → Add Package Dependencies → `https://github.com/iosdeveloper2026/live-activity-kit` (Up to Next Major, from 1.0.0).
 
 | Product | Add to |
 |---|---|

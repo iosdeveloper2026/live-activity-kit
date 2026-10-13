@@ -5,7 +5,8 @@ with no new screens. Extracted from the GiftBox Live Activity demo.
 
 | Folder | What it is |
 |---|---|
-| `ios/` | Swift package with three libraries (see below) |
+| `Package.swift`, `ios/Sources/` | Swift package with three libraries (see below) |
+| `skill/live-activity-integrator/` | Claude Code skill that installs all of this into an app |
 | `schema/live_activity_config.schema.json` | JSON Schema for the `live_activity_config` Remote Config parameter |
 | `examples/live_activity_config.json` | Example config with four rotating cards |
 | `firebase/firestore.rules` | Firestore rules: apps may only write their own token record |
@@ -13,6 +14,19 @@ with no new screens. Extracted from the GiftBox Live Activity demo.
 
 The scheduler is the separate template repo
 [`live-activity-cron`](https://github.com/iosdeveloper2026/live-activity-cron).
+
+## Quick start
+
+**Add to an app by hand:** follow [INSTALL.md](INSTALL.md). Swift Package URL: `https://github.com/iosdeveloper2026/live-activity-kit`.
+
+**Let Claude Code do it:** on the Mac where you build the app, run
+
+```bash
+git clone https://github.com/iosdeveloper2026/live-activity-kit.git
+./live-activity-kit/skill/install.sh
+```
+
+then, in Claude Code in the app's folder: *"add the Live Activity kit to this app"*.
 
 ## Swift package
 

@@ -9,8 +9,9 @@ You add the LiveActivityKit system to the iOS app in the current folder (or the 
 names), following seven stages. **Show every step as you go**: say which stage you're in, print each
 command before running it, and end each stage with its check and the result.
 
-The kit lives at `../../` relative to this file (`ios/` package, `schema/`, `examples/`,
-`firebase/`, `INSTALL.md`). Scripts are in `scripts/`, detailed references in `references/`.
+The kit is this skill's repo: `../../` relative to this file (Swift package at the root, `schema/`,
+`examples/`, `firebase/`, `INSTALL.md`), published at https://github.com/iosdeveloper2026/live-activity-kit. Apps add the package by that Git URL
+(version 1.0.0 or later). Scripts are in `scripts/`, detailed references in `references/`.
 
 ## Rules
 
@@ -50,13 +51,13 @@ Activities, suspicious build phases.
 ## Stage 2 · iOS
 
 ```bash
-ruby scripts/add_kit.rb --project <App.xcodeproj> --kit <kit/ios path or Git URL> --dry-run   # show the plan
-ruby scripts/add_kit.rb --project <App.xcodeproj> --kit <kit/ios path or Git URL>
+ruby scripts/add_kit.rb --project <App.xcodeproj> --resource <App>/GoogleService-Info.plist --dry-run   # show the plan
+ruby scripts/add_kit.rb --project <App.xcodeproj> --resource <App>/GoogleService-Info.plist
 python3 scripts/insert_start_line.py <launch file> [--firebase-configured] --dry-run      # show the diff
 python3 scripts/insert_start_line.py <launch file> [--firebase-configured]
 ```
 
-- `add_kit.rb` adds the package, the widget extension (one file from `templates/AppWidgets.swift`),
+- `add_kit.rb` adds the package (by Git URL; pass `--kit <local kit folder>` only when developing the kit), the widget extension (one file from `templates/AppWidgets.swift`),
   the embed step, App Group `group.<bundle-id>` and push entitlements, Info.plist keys, and raises
   the deployment target to iOS 17 if needed.
 - Pass `--firebase-configured` when Stage 1 found `FirebaseApp.configure` already.
